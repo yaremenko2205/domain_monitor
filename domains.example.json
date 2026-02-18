@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "exportedAt": "2026-02-18T00:00:00.000Z",
+  "domains": [
+    { "domain": "example.com", "notes": "Main website" },
+    { "domain": "example.org", "notes": "Blog" },
+    { "domain": "myapp.io", "enabled": true }
+  ]
+}
