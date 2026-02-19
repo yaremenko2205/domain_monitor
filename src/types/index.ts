@@ -1,5 +1,6 @@
 export interface DomainWithExpiry {
   id: number;
+  userId: string | null;
   domain: string;
   registrar: string | null;
   creationDate: string | null;
@@ -11,6 +12,8 @@ export interface DomainWithExpiry {
   createdAt: string;
   updatedAt: string;
   daysUntilExpiry: number | null;
+  permission?: "read" | "edit" | "full_control";
+  isOwner?: boolean;
 }
 
 export interface NotificationLogEntry {
@@ -22,6 +25,16 @@ export interface NotificationLogEntry {
   sentAt: string;
   success: boolean;
   error: string | null;
+}
+
+export interface DomainShare {
+  id: number;
+  domainId: number;
+  sharedWithUserId: string;
+  sharedWithEmail?: string;
+  sharedWithName?: string;
+  permission: "read" | "edit" | "full_control";
+  createdAt: string;
 }
 
 export interface AppSettings {

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +20,8 @@ import {
 import { DomainDetailCard } from "@/components/domain-detail-card";
 import { NotificationLogTable } from "@/components/notification-log-table";
 import { CheckSingleButton } from "@/components/check-button";
-import { ArrowLeft, Trash2, Save, Loader2 } from "lucide-react";
+import { ShareDomainDialog } from "@/components/share-domain-dialog";
+import { ArrowLeft, Trash2, Save, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import type { DomainWithExpiry, NotificationLogEntry } from "@/types";
@@ -96,6 +98,13 @@ export default function DomainDetailPage() {
 
   if (!domain) return null;
 
+  const canEdit =
+    domain.isOwner ||
+    domain.permission === "edit" ||
+    domain.permission === "full_control";
+  const canDelete =
+    domain.isOwner || domain.permission === "full_control";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -107,29 +116,46 @@ export default function DomainDetailPage() {
             </Link>
           </Button>
           <h1 className="text-2xl font-bold">{domain.domain}</h1>
+          {domain.isOwner === false && (
+            <Badge variant="outline">
+              <Users className="mr-1 h-3 w-3" />
+              Shared ({domain.permission})
+            </Badge>
+          )}
           <CheckSingleButton domainId={domain.id} onDone={fetchDomain} />
+          {domain.isOwner && (
+            <ShareDomainDialog
+              domainId={domain.id}
+              domainName={domain.domain}
+            />
+          )}
         </div>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Domain</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete <strong>{domain.domain}</strong>?
-                This will also remove all notification history.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {canDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Domain</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete{" "}
+                  <strong>{domain.domain}</strong>? This will also remove all
+                  notification history.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       <DomainDetailCard domain={domain} />
@@ -144,19 +170,22 @@ export default function DomainDetailPage() {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add notes about this domain..."
             rows={3}
+            disabled={!canEdit}
           />
-          <Button
-            size="sm"
-            onClick={handleSaveNotes}
-            disabled={savingNotes || notes === (domain.notes || "")}
-          >
-            {savingNotes ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            Save Notes
-          </Button>
+          {canEdit && (
+            <Button
+              size="sm"
+              onClick={handleSaveNotes}
+              disabled={savingNotes || notes === (domain.notes || "")}
+            >
+              {savingNotes ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Notes
+            </Button>
+          )}
         </CardContent>
       </Card>
 

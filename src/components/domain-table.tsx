@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +35,14 @@ import { DashboardStats } from "@/components/dashboard-stats";
 import { AddDomainDialog } from "@/components/add-domain-dialog";
 import { CheckAllButton } from "@/components/check-button";
 import { ImportExportButtons } from "@/components/import-export-buttons";
-import { MoreHorizontal, Trash2, ExternalLink, ArrowUpDown } from "lucide-react";
+import { ShareDomainDialog } from "@/components/share-domain-dialog";
+import {
+  MoreHorizontal,
+  Trash2,
+  ExternalLink,
+  ArrowUpDown,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { DomainWithExpiry } from "@/types";
@@ -47,7 +55,9 @@ export function DomainDashboard() {
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("daysUntilExpiry");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [deleteTarget, setDeleteTarget] = useState<DomainWithExpiry | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DomainWithExpiry | null>(
+    null
+  );
 
   const fetchDomains = useCallback(async () => {
     try {
@@ -112,7 +122,13 @@ export function DomainDashboard() {
     }
   }
 
-  function SortButton({ field, children }: { field: SortField; children: React.ReactNode }) {
+  function SortButton({
+    field,
+    children,
+  }: {
+    field: SortField;
+    children: React.ReactNode;
+  }) {
     return (
       <button
         onClick={() => toggleSort(field)}
@@ -122,6 +138,18 @@ export function DomainDashboard() {
         <ArrowUpDown className="h-3 w-3" />
       </button>
     );
+  }
+
+  function canEdit(d: DomainWithExpiry): boolean {
+    return (
+      d.isOwner === true ||
+      d.permission === "edit" ||
+      d.permission === "full_control"
+    );
+  }
+
+  function canDelete(d: DomainWithExpiry): boolean {
+    return d.isOwner === true || d.permission === "full_control";
   }
 
   return (
@@ -137,7 +165,9 @@ export function DomainDashboard() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading...</div>
+        <div className="text-center py-12 text-muted-foreground">
+          Loading...
+        </div>
       ) : domains.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p className="text-lg">No domains yet</p>
@@ -162,19 +192,30 @@ export function DomainDashboard() {
                   <SortButton field="lastChecked">Last Checked</SortButton>
                 </TableHead>
                 <TableHead>Enabled</TableHead>
-                <TableHead className="w-[80px]">Actions</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sorted.map((d) => (
-                <TableRow key={d.id} className={!d.enabled ? "opacity-50" : ""}>
+                <TableRow
+                  key={d.id}
+                  className={!d.enabled ? "opacity-50" : ""}
+                >
                   <TableCell>
-                    <Link
-                      href={`/domains/${d.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {d.domain}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/domains/${d.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {d.domain}
+                      </Link>
+                      {d.isOwner === false && (
+                        <Badge variant="outline" className="text-xs">
+                          <Users className="mr-1 h-3 w-3" />
+                          Shared
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={d.status} />
@@ -192,6 +233,7 @@ export function DomainDashboard() {
                     <Switch
                       checked={d.enabled}
                       onCheckedChange={() => handleToggleEnabled(d)}
+                      disabled={!canEdit(d)}
                     />
                   </TableCell>
                   <TableCell>
@@ -200,6 +242,12 @@ export function DomainDashboard() {
                         domainId={d.id}
                         onDone={fetchDomains}
                       />
+                      {d.isOwner && (
+                        <ShareDomainDialog
+                          domainId={d.id}
+                          domainName={d.domain}
+                        />
+                      )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
@@ -213,13 +261,15 @@ export function DomainDashboard() {
                               View Details
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setDeleteTarget(d)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
+                          {canDelete(d) && (
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setDeleteTarget(d)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

@@ -2,13 +2,24 @@
 
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Download } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Upload, Download, FileJson, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 
-export function ImportExportButtons({ onImported }: { onImported: () => void }) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export function ImportExportButtons({
+  onImported,
+}: {
+  onImported: () => void;
+}) {
+  const jsonInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
-  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleJsonImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -35,35 +46,96 @@ export function ImportExportButtons({ onImported }: { onImported: () => void }) 
       toast.error("Invalid JSON file");
     }
 
-    // Reset input
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (jsonInputRef.current) jsonInputRef.current.value = "";
   }
 
-  function handleExport() {
-    window.open("/api/domains/export", "_blank");
+  async function handleCsvImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/domains/import-csv", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        toast.success(
+          `Imported ${result.imported} domain(s), skipped ${result.skipped}`
+        );
+        onImported();
+      } else {
+        toast.error(result.error || "CSV import failed");
+      }
+    } catch {
+      toast.error("Invalid CSV file");
+    }
+
+    if (csvInputRef.current) csvInputRef.current.value = "";
   }
 
   return (
     <div className="flex gap-2">
       <input
         type="file"
-        ref={fileInputRef}
+        ref={jsonInputRef}
         accept=".json"
-        onChange={handleImport}
+        onChange={handleJsonImport}
         className="hidden"
       />
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <Upload className="mr-2 h-4 w-4" />
-        Import
-      </Button>
-      <Button variant="outline" size="sm" onClick={handleExport}>
-        <Download className="mr-2 h-4 w-4" />
-        Export
-      </Button>
+      <input
+        type="file"
+        ref={csvInputRef}
+        accept=".csv"
+        onChange={handleCsvImport}
+        className="hidden"
+      />
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => jsonInputRef.current?.click()}>
+            <FileJson className="mr-2 h-4 w-4" />
+            Import JSON
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => csvInputRef.current?.click()}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Import CSV
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onClick={() => window.open("/api/domains/export", "_blank")}
+          >
+            <FileJson className="mr-2 h-4 w-4" />
+            Export JSON
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => window.open("/api/domains/export-csv", "_blank")}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Export CSV
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

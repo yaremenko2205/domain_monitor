@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { settings, domains } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { userSettings, domains } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 import type { AppSettings } from "@/types";
 
 const DEFAULT_SETTINGS: Record<string, string> = {
@@ -18,8 +18,12 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   check_cron_schedule: "0 8 * * *",
 };
 
-export function getSettings(): AppSettings {
-  const rows = db.select().from(settings).all();
+export function getSettings(userId: string): AppSettings {
+  const rows = db
+    .select()
+    .from(userSettings)
+    .where(eq(userSettings.userId, userId))
+    .all();
   const map: Record<string, string> = { ...DEFAULT_SETTINGS };
   for (const row of rows) {
     map[row.key] = row.value;
@@ -27,24 +31,31 @@ export function getSettings(): AppSettings {
   return map as AppSettings;
 }
 
-export function getSetting(key: string): string {
-  const row = db.select().from(settings).where(eq(settings.key, key)).get();
+export function getSetting(userId: string, key: string): string {
+  const row = db
+    .select()
+    .from(userSettings)
+    .where(and(eq(userSettings.userId, userId), eq(userSettings.key, key)))
+    .get();
   return row?.value ?? DEFAULT_SETTINGS[key] ?? "";
 }
 
-export function setSetting(key: string, value: string): void {
-  db.insert(settings)
-    .values({ key, value, updatedAt: new Date().toISOString() })
+export function setSetting(userId: string, key: string, value: string): void {
+  db.insert(userSettings)
+    .values({ userId, key, value, updatedAt: new Date().toISOString() })
     .onConflictDoUpdate({
-      target: settings.key,
+      target: [userSettings.userId, userSettings.key],
       set: { value, updatedAt: new Date().toISOString() },
     })
     .run();
 }
 
-export function setSettings(entries: Record<string, string>): void {
+export function setSettings(
+  userId: string,
+  entries: Record<string, string>
+): void {
   for (const [key, value] of Object.entries(entries)) {
-    setSetting(key, value);
+    setSetting(userId, key, value);
   }
 }
 
@@ -60,12 +71,16 @@ export interface DomainExportFile {
   domains: DomainExportEntry[];
 }
 
-export function exportDomainsToJson(): DomainExportFile {
-  const allDomains = db.select().from(domains).all();
+export function exportDomainsToJson(userId: string): DomainExportFile {
+  const userDomains = db
+    .select()
+    .from(domains)
+    .where(eq(domains.userId, userId))
+    .all();
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
-    domains: allDomains.map((d) => ({
+    domains: userDomains.map((d) => ({
       domain: d.domain,
       notes: d.notes || undefined,
       enabled: d.enabled,
@@ -74,7 +89,8 @@ export function exportDomainsToJson(): DomainExportFile {
 }
 
 export function importDomainsFromJson(
-  entries: DomainExportEntry[]
+  entries: DomainExportEntry[],
+  userId: string
 ): { imported: number; skipped: number } {
   let imported = 0;
   let skipped = 0;
@@ -89,7 +105,7 @@ export function importDomainsFromJson(
     const existing = db
       .select()
       .from(domains)
-      .where(eq(domains.domain, domainName))
+      .where(and(eq(domains.domain, domainName), eq(domains.userId, userId)))
       .get();
 
     if (existing) {
@@ -99,6 +115,7 @@ export function importDomainsFromJson(
 
     db.insert(domains)
       .values({
+        userId,
         domain: domainName,
         notes: entry.notes || null,
         enabled: entry.enabled ?? true,

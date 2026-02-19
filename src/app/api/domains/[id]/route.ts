@@ -3,93 +3,110 @@ import { db } from "@/lib/db";
 import { domains, notificationLog } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { daysUntilExpiry } from "@/lib/utils";
+import { requireUserId, getDomainWithAccess } from "@/lib/auth-helpers";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const domain = db
-    .select()
-    .from(domains)
-    .where(eq(domains.id, Number(id)))
-    .get();
+  try {
+    const userId = await requireUserId();
+    const { id } = await params;
 
-  if (!domain) {
-    return NextResponse.json({ error: "Domain not found" }, { status: 404 });
+    const access = getDomainWithAccess(Number(id), userId);
+    if (!access) {
+      return NextResponse.json({ error: "Domain not found" }, { status: 404 });
+    }
+
+    const { domain } = access;
+
+    const logs = db
+      .select()
+      .from(notificationLog)
+      .where(eq(notificationLog.domainId, domain.id))
+      .all();
+
+    return NextResponse.json({
+      ...domain,
+      daysUntilExpiry: domain.expiryDate
+        ? daysUntilExpiry(domain.expiryDate)
+        : null,
+      notificationLogs: logs,
+      permission: access.permission,
+      isOwner: access.isOwner,
+    });
+  } catch (err) {
+    if (err instanceof Response) return err;
+    throw err;
   }
-
-  const logs = db
-    .select()
-    .from(notificationLog)
-    .where(eq(notificationLog.domainId, domain.id))
-    .all();
-
-  return NextResponse.json({
-    ...domain,
-    daysUntilExpiry: domain.expiryDate
-      ? daysUntilExpiry(domain.expiryDate)
-      : null,
-    notificationLogs: logs,
-  });
 }
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const body = (await request.json()) as {
-    notes?: string;
-    enabled?: boolean;
-  };
+  try {
+    const userId = await requireUserId();
+    const { id } = await params;
 
-  const domain = db
-    .select()
-    .from(domains)
-    .where(eq(domains.id, Number(id)))
-    .get();
+    const access = getDomainWithAccess(Number(id), userId, "edit");
+    if (!access) {
+      return NextResponse.json(
+        { error: "Permission denied" },
+        { status: 403 }
+      );
+    }
 
-  if (!domain) {
-    return NextResponse.json({ error: "Domain not found" }, { status: 404 });
+    const body = (await request.json()) as {
+      notes?: string;
+      enabled?: boolean;
+    };
+
+    const updates: Record<string, unknown> = {
+      updatedAt: new Date().toISOString(),
+    };
+    if (body.notes !== undefined) updates.notes = body.notes;
+    if (body.enabled !== undefined) updates.enabled = body.enabled;
+
+    db.update(domains)
+      .set(updates)
+      .where(eq(domains.id, Number(id)))
+      .run();
+
+    const updated = db
+      .select()
+      .from(domains)
+      .where(eq(domains.id, Number(id)))
+      .get();
+
+    return NextResponse.json(updated);
+  } catch (err) {
+    if (err instanceof Response) return err;
+    throw err;
   }
-
-  const updates: Record<string, unknown> = {
-    updatedAt: new Date().toISOString(),
-  };
-  if (body.notes !== undefined) updates.notes = body.notes;
-  if (body.enabled !== undefined) updates.enabled = body.enabled;
-
-  db.update(domains)
-    .set(updates)
-    .where(eq(domains.id, Number(id)))
-    .run();
-
-  const updated = db
-    .select()
-    .from(domains)
-    .where(eq(domains.id, Number(id)))
-    .get();
-
-  return NextResponse.json(updated);
 }
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const domain = db
-    .select()
-    .from(domains)
-    .where(eq(domains.id, Number(id)))
-    .get();
+  try {
+    const userId = await requireUserId();
+    const { id } = await params;
 
-  if (!domain) {
-    return NextResponse.json({ error: "Domain not found" }, { status: 404 });
+    const access = getDomainWithAccess(Number(id), userId, "full_control");
+    if (!access) {
+      return NextResponse.json(
+        { error: "Permission denied" },
+        { status: 403 }
+      );
+    }
+
+    db.delete(domains).where(eq(domains.id, Number(id))).run();
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    if (err instanceof Response) return err;
+    throw err;
   }
-
-  db.delete(domains).where(eq(domains.id, Number(id))).run();
-
-  return NextResponse.json({ success: true });
 }

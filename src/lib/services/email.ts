@@ -1,14 +1,14 @@
 import nodemailer from "nodemailer";
 import { getSettings } from "@/lib/config";
+import type { AppSettings } from "@/types";
 
 export async function sendEmailNotification(
   subject: string,
   htmlBody: string,
-  textBody: string
+  textBody: string,
+  s: AppSettings
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const s = getSettings();
-
     if (!s.smtp_host || !s.smtp_user) {
       return { success: false, error: "SMTP not configured" };
     }
@@ -43,13 +43,14 @@ export async function sendEmailNotification(
   }
 }
 
-export async function sendTestEmail(): Promise<{
-  success: boolean;
-  error?: string;
-}> {
+export async function sendTestEmail(
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
+  const s = getSettings(userId);
   return sendEmailNotification(
     "Domain Monitor - Test Email",
     "<h2>Test Notification</h2><p>Email notifications are working correctly.</p>",
-    "Test Notification\n\nEmail notifications are working correctly."
+    "Test Notification\n\nEmail notifications are working correctly.",
+    s
   );
 }

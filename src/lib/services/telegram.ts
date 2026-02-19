@@ -1,12 +1,13 @@
 import { getSettings } from "@/lib/config";
+import type { AppSettings } from "@/types";
 
 const TELEGRAM_API = "https://api.telegram.org";
 
 export async function sendTelegramNotification(
-  message: string
+  message: string,
+  s: AppSettings
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const s = getSettings();
     const botToken = s.telegram_bot_token;
     const chatId = s.telegram_chat_id;
 
@@ -44,11 +45,12 @@ export async function sendTelegramNotification(
   }
 }
 
-export async function sendTestTelegram(): Promise<{
-  success: boolean;
-  error?: string;
-}> {
+export async function sendTestTelegram(
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
+  const s = getSettings(userId);
   return sendTelegramNotification(
-    "<b>Domain Monitor</b>\n\nTest notification. Telegram is configured correctly."
+    "<b>Domain Monitor</b>\n\nTest notification. Telegram is configured correctly.",
+    s
   );
 }

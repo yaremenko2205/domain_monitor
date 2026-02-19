@@ -9,25 +9,24 @@ interface DomainRecord {
   id: number;
   domain: string;
   expiryDate: string | null;
+  userId: string;
 }
 
 export async function processNotifications(
   domain: DomainRecord,
   daysLeft: number
 ): Promise<void> {
-  const s = getSettings();
+  const s = getSettings(domain.userId);
   const thresholds: number[] = JSON.parse(
     s.notification_thresholds || "[60,30,14,7,1]"
   );
 
-  // Find the highest threshold this domain falls under
   const applicableThreshold = thresholds
     .sort((a, b) => b - a)
     .find((t) => daysLeft <= t);
 
   if (!applicableThreshold) return;
 
-  // Check if we already notified for this domain at this threshold
   const existingLog = db
     .select()
     .from(notificationLog)
@@ -46,21 +45,14 @@ export async function processNotifications(
   const htmlBody = buildHtmlMessage(domain, daysLeft);
   const textBody = `Domain: ${domain.domain}\nDays until expiry: ${daysLeft}\nExpiry date: ${domain.expiryDate || "unknown"}`;
 
-  // Send via enabled channels
   if (s.email_enabled === "true") {
-    const result = await sendEmailNotification(subject, htmlBody, textBody);
-    logNotification(
-      domain.id,
-      "email",
-      applicableThreshold,
-      subject,
-      result
-    );
+    const result = await sendEmailNotification(subject, htmlBody, textBody, s);
+    logNotification(domain.id, "email", applicableThreshold, subject, result);
   }
 
   if (s.telegram_enabled === "true") {
     const telegramMsg = `<b>${domain.domain}</b>\nExpires in <b>${daysLeft} days</b>\n(${domain.expiryDate || "unknown"})`;
-    const result = await sendTelegramNotification(telegramMsg);
+    const result = await sendTelegramNotification(telegramMsg, s);
     logNotification(
       domain.id,
       "telegram",
@@ -91,10 +83,7 @@ function logNotification(
     .run();
 }
 
-function buildHtmlMessage(
-  domain: DomainRecord,
-  daysLeft: number
-): string {
+function buildHtmlMessage(domain: DomainRecord, daysLeft: number): string {
   const urgency =
     daysLeft <= 7
       ? "color: #dc2626; font-weight: bold"

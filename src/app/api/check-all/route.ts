@@ -50,9 +50,14 @@ export async function POST(request: Request) {
       .where(eq(domains.id, d.id))
       .run();
 
-    if (whois.expiryDate && days !== null) {
+    if (whois.expiryDate && days !== null && d.userId) {
       await processNotifications(
-        { id: d.id, domain: d.domain, expiryDate: whois.expiryDate },
+        {
+          id: d.id,
+          domain: d.domain,
+          expiryDate: whois.expiryDate,
+          userId: d.userId,
+        },
         days
       );
     }

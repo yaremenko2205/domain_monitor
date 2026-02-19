@@ -1,0 +1,36 @@
+import { NextResponse } from "next/server";
+import { requireUserId } from "@/lib/auth-helpers";
+import { db } from "@/lib/db";
+import { domains } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { domainsToCsv } from "@/lib/csv";
+
+export async function GET() {
+  try {
+    const userId = await requireUserId();
+
+    const userDomains = db
+      .select()
+      .from(domains)
+      .where(eq(domains.userId, userId))
+      .all();
+
+    const csv = domainsToCsv(
+      userDomains.map((d) => ({
+        domain: d.domain,
+        notes: d.notes,
+        enabled: d.enabled,
+      }))
+    );
+
+    return new NextResponse(csv, {
+      headers: {
+        "Content-Type": "text/csv",
+        "Content-Disposition": 'attachment; filename="domains-export.csv"',
+      },
+    });
+  } catch (err) {
+    if (err instanceof Response) return err;
+    throw err;
+  }
+}
