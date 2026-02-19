@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.gitignore
+.claude
+data/*.db
+data/*.db-wal
+data/*.db-shm
+*.md
+.env*.local
+npm-debug.log*
+.DS_Store
+.vercel
