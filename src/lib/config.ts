@@ -63,6 +63,10 @@ export interface DomainExportEntry {
   domain: string;
   notes?: string;
   enabled?: boolean;
+  ownerAccount?: string;
+  paymentMethod?: string;
+  paymentMethodExpiry?: string;
+  passboltUrl?: string;
 }
 
 export interface DomainExportFile {
@@ -71,12 +75,10 @@ export interface DomainExportFile {
   domains: DomainExportEntry[];
 }
 
-export function exportDomainsToJson(userId: string): DomainExportFile {
-  const userDomains = db
-    .select()
-    .from(domains)
-    .where(eq(domains.userId, userId))
-    .all();
+export function exportDomainsToJson(userId: string, exportAll?: boolean): DomainExportFile {
+  const userDomains = exportAll
+    ? db.select().from(domains).all()
+    : db.select().from(domains).where(eq(domains.userId, userId)).all();
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
@@ -84,6 +86,10 @@ export function exportDomainsToJson(userId: string): DomainExportFile {
       domain: d.domain,
       notes: d.notes || undefined,
       enabled: d.enabled,
+      ownerAccount: d.ownerAccount || undefined,
+      paymentMethod: d.paymentMethod || undefined,
+      paymentMethodExpiry: d.paymentMethodExpiry || undefined,
+      passboltUrl: d.passboltUrl || undefined,
     })),
   };
 }
@@ -119,6 +125,10 @@ export function importDomainsFromJson(
         domain: domainName,
         notes: entry.notes || null,
         enabled: entry.enabled ?? true,
+        ownerAccount: entry.ownerAccount || null,
+        paymentMethod: entry.paymentMethod || null,
+        paymentMethodExpiry: entry.paymentMethodExpiry || null,
+        passboltUrl: entry.passboltUrl || null,
         status: "unknown",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

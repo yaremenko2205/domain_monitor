@@ -1,3 +1,5 @@
+export type UserRole = "admin" | "user" | "viewer";
+
 export interface DomainWithExpiry {
   id: number;
   userId: string | null;
@@ -8,6 +10,10 @@ export interface DomainWithExpiry {
   lastChecked: string | null;
   status: "active" | "expiring_soon" | "expired" | "unknown" | "error";
   notes: string | null;
+  ownerAccount: string | null;
+  paymentMethod: string | null;
+  paymentMethodExpiry: string | null;
+  passboltUrl: string | null;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSettings, setSettings } from "@/lib/config";
-import { requireUserId } from "@/lib/auth-helpers";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function GET() {
   try {
-    const userId = await requireUserId();
+    const { id: userId } = await requireAdmin();
     const s = getSettings(userId);
     // Mask sensitive values for display
     const masked = { ...s };
@@ -24,7 +24,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const userId = await requireUserId();
+    const { id: userId } = await requireAdmin();
     const body = (await request.json()) as Record<string, string>;
 
     // Don't overwrite with masked values

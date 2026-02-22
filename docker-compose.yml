@@ -25,6 +25,7 @@ services:
       - .env.local
     environment:
       - NODE_ENV=production
+      - NEXT_PUBLIC_BASE_URL=https://${DOMAIN:-localhost}
     restart: unless-stopped
 
 volumes:

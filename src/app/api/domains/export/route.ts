@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { exportDomainsToJson } from "@/lib/config";
-import { requireUserId } from "@/lib/auth-helpers";
+import { requireAuth } from "@/lib/auth-helpers";
 
 export async function GET() {
   try {
-    const userId = await requireUserId();
-    const data = exportDomainsToJson(userId);
+    const { id: userId, role } = await requireAuth();
+    const exportAll = role === "admin" || role === "viewer";
+    const data = exportDomainsToJson(userId, exportAll);
     return new NextResponse(JSON.stringify(data, null, 2), {
       headers: {
         "Content-Type": "application/json",

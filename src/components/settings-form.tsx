@@ -8,7 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Save, Send, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Save, Send, X, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 interface SettingsData {
@@ -27,10 +34,24 @@ interface SettingsData {
   [key: string]: string;
 }
 
+interface RoleSettings {
+  role_mapping_admin: string;
+  role_mapping_user: string;
+  role_mapping_viewer: string;
+  default_role: string;
+}
+
 export function SettingsForm() {
   const [settings, setSettings] = useState<SettingsData | null>(null);
+  const [roleSettings, setRoleSettings] = useState<RoleSettings>({
+    role_mapping_admin: "",
+    role_mapping_user: "",
+    role_mapping_viewer: "",
+    default_role: "user",
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingRoles, setSavingRoles] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [testingTelegram, setTestingTelegram] = useState(false);
   const [newThreshold, setNewThreshold] = useState("");
@@ -38,6 +59,7 @@ export function SettingsForm() {
 
   useEffect(() => {
     fetchSettings();
+    fetchRoleSettings();
   }, []);
 
   async function fetchSettings() {
@@ -49,6 +71,43 @@ export function SettingsForm() {
       toast.error("Failed to load settings");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchRoleSettings() {
+    try {
+      const res = await fetch("/api/settings/roles");
+      if (res.ok) {
+        const data = await res.json();
+        setRoleSettings({
+          role_mapping_admin: data.role_mapping_admin || "",
+          role_mapping_user: data.role_mapping_user || "",
+          role_mapping_viewer: data.role_mapping_viewer || "",
+          default_role: data.default_role || "user",
+        });
+      }
+    } catch {
+      // Role settings may not exist yet
+    }
+  }
+
+  async function handleSaveRoles() {
+    setSavingRoles(true);
+    try {
+      const res = await fetch("/api/settings/roles", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(roleSettings),
+      });
+      if (res.ok) {
+        toast.success("Role settings saved");
+      } else {
+        toast.error("Failed to save role settings");
+      }
+    } catch {
+      toast.error("Failed to save role settings");
+    } finally {
+      setSavingRoles(false);
     }
   }
 
@@ -163,6 +222,88 @@ export function SettingsForm() {
 
   return (
     <div className="space-y-6">
+      {/* Role Management */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            <div>
+              <CardTitle>Role Management</CardTitle>
+              <CardDescription>
+                Map Microsoft Entra ID group IDs to application roles. Users are assigned
+                roles on sign-in based on their group membership.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Admin Group ID</Label>
+              <Input
+                value={roleSettings.role_mapping_admin}
+                onChange={(e) =>
+                  setRoleSettings({ ...roleSettings, role_mapping_admin: e.target.value })
+                }
+                placeholder="Azure AD Group Object ID"
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>User Group ID</Label>
+              <Input
+                value={roleSettings.role_mapping_user}
+                onChange={(e) =>
+                  setRoleSettings({ ...roleSettings, role_mapping_user: e.target.value })
+                }
+                placeholder="Azure AD Group Object ID"
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Viewer Group ID</Label>
+              <Input
+                value={roleSettings.role_mapping_viewer}
+                onChange={(e) =>
+                  setRoleSettings({ ...roleSettings, role_mapping_viewer: e.target.value })
+                }
+                placeholder="Azure AD Group Object ID"
+                className="font-mono text-sm"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Default Role</Label>
+            <Select
+              value={roleSettings.default_role}
+              onValueChange={(value) =>
+                setRoleSettings({ ...roleSettings, default_role: value })
+              }
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="viewer">Viewer</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Role assigned to users who don&apos;t match any group. Applied on next sign-in.
+            </p>
+          </div>
+          <Button onClick={handleSaveRoles} disabled={savingRoles} size="sm">
+            {savingRoles ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Save Role Settings
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Notification Thresholds */}
       <Card>
         <CardHeader>

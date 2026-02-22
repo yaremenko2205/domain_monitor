@@ -12,6 +12,9 @@ export const users = sqliteTable("users", {
   email: text("email").unique(),
   emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
   image: text("image"),
+  role: text("role", { enum: ["admin", "user", "viewer"] })
+    .default("user")
+    .notNull(),
 });
 
 export const accounts = sqliteTable(
@@ -79,6 +82,10 @@ export const domains = sqliteTable("domains", {
     .default("unknown")
     .notNull(),
   notes: text("notes"),
+  ownerAccount: text("owner_account"),
+  paymentMethod: text("payment_method"),
+  paymentMethodExpiry: text("payment_method_expiry"),
+  passboltUrl: text("passbolt_url"),
   enabled: integer("enabled", { mode: "boolean" }).default(true).notNull(),
   createdAt: text("created_at")
     .notNull()
@@ -137,3 +144,11 @@ export const userSettings = sqliteTable(
     }),
   ]
 );
+
+export const systemSettings = sqliteTable("system_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});

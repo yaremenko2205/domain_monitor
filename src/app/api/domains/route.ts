@@ -4,20 +4,31 @@ import { domains, domainShares } from "@/lib/db/schema";
 import { daysUntilExpiry, getExpiryStatus } from "@/lib/utils";
 import { eq, or } from "drizzle-orm";
 import { lookupDomain } from "@/lib/services/whois";
-import { requireUserId } from "@/lib/auth-helpers";
+import { requireAuth } from "@/lib/auth-helpers";
 
 export async function GET() {
   try {
-    const userId = await requireUserId();
+    const { id: userId, role } = await requireAuth();
 
-    // Get own domains
+    if (role === "admin" || role === "viewer") {
+      // Admin and viewer see ALL domains
+      const allDomains = db.select().from(domains).all();
+      const enriched = allDomains.map((d) => ({
+        ...d,
+        daysUntilExpiry: d.expiryDate ? daysUntilExpiry(d.expiryDate) : null,
+        permission: role === "admin" ? ("full_control" as const) : ("read" as const),
+        isOwner: d.userId === userId,
+      }));
+      return NextResponse.json(enriched);
+    }
+
+    // Regular user: own + shared domains
     const ownDomains = db
       .select()
       .from(domains)
       .where(eq(domains.userId, userId))
       .all();
 
-    // Get shared domains
     const shares = db
       .select()
       .from(domainShares)
@@ -60,8 +71,23 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const userId = await requireUserId();
-    const body = (await request.json()) as { domain?: string; notes?: string };
+    const { id: userId, role } = await requireAuth();
+
+    if (role === "viewer") {
+      return NextResponse.json(
+        { error: "Forbidden: viewers cannot create domains" },
+        { status: 403 }
+      );
+    }
+
+    const body = (await request.json()) as {
+      domain?: string;
+      notes?: string;
+      ownerAccount?: string;
+      paymentMethod?: string;
+      paymentMethodExpiry?: string;
+      passboltUrl?: string;
+    };
     const domainName = body.domain?.toLowerCase().trim();
 
     if (!domainName) {
@@ -92,6 +118,10 @@ export async function POST(request: Request) {
         userId,
         domain: domainName,
         notes: body.notes || null,
+        ownerAccount: body.ownerAccount || null,
+        paymentMethod: body.paymentMethod || null,
+        paymentMethodExpiry: body.paymentMethodExpiry || null,
+        passboltUrl: body.passboltUrl || null,
         status: "unknown",
         createdAt: now,
         updatedAt: now,

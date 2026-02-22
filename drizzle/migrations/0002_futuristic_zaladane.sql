@@ -1,0 +1,1 @@
+ALTER TABLE `domains` ADD `passbolt_url` text;

@@ -23,6 +23,10 @@ export function AddDomainDialog({
   const [open, setOpen] = useState(false);
   const [domain, setDomain] = useState("");
   const [notes, setNotes] = useState("");
+  const [ownerAccount, setOwnerAccount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethodExpiry, setPaymentMethodExpiry] = useState("");
+  const [passboltUrl, setPassboltUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -34,7 +38,14 @@ export function AddDomainDialog({
       const res = await fetch("/api/domains", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: domain.trim(), notes: notes.trim() || undefined }),
+        body: JSON.stringify({
+          domain: domain.trim(),
+          notes: notes.trim() || undefined,
+          ownerAccount: ownerAccount.trim() || undefined,
+          paymentMethod: paymentMethod.trim() || undefined,
+          paymentMethodExpiry: paymentMethodExpiry.trim() || undefined,
+          passboltUrl: passboltUrl.trim() || undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -46,6 +57,10 @@ export function AddDomainDialog({
       toast.success(`Added ${domain.trim()}`);
       setDomain("");
       setNotes("");
+      setOwnerAccount("");
+      setPaymentMethod("");
+      setPaymentMethodExpiry("");
+      setPassboltUrl("");
       setOpen(false);
       onAdded();
     } catch {
@@ -85,6 +100,54 @@ export function AddDomainDialog({
               placeholder="Main website, blog, etc."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ownerAccount">Owner Account (optional)</Label>
+            <Input
+              id="ownerAccount"
+              placeholder="Company name"
+              value={ownerAccount}
+              onChange={(e) => setOwnerAccount(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="paymentMethod">CC Last 4 (optional)</Label>
+              <Input
+                id="paymentMethod"
+                placeholder="1234"
+                value={paymentMethod}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                  setPaymentMethod(val);
+                }}
+                maxLength={4}
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentExpiry">Card Expiry (optional)</Label>
+              <Input
+                id="paymentExpiry"
+                placeholder="MM/YY"
+                value={paymentMethodExpiry}
+                onChange={(e) => setPaymentMethodExpiry(e.target.value)}
+                maxLength={5}
+                disabled={loading}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="passboltUrl">Passbolt URL (optional)</Label>
+            <Input
+              id="passboltUrl"
+              type="url"
+              placeholder="https://passbolt.example.com/..."
+              value={passboltUrl}
+              onChange={(e) => setPassboltUrl(e.target.value)}
               disabled={loading}
             />
           </div>

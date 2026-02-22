@@ -19,6 +19,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow _next and static assets
+  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
+    return NextResponse.next();
+  }
+
   // Check for session cookie (authjs.session-token or __Secure-authjs.session-token)
   const sessionToken =
     request.cookies.get("authjs.session-token")?.value ||
@@ -29,7 +34,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const signInUrl = new URL("/auth/signin", request.url);
-    signInUrl.searchParams.set("callbackUrl", request.url);
+    signInUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(signInUrl);
   }
 

@@ -5,18 +5,24 @@ import { eq } from "drizzle-orm";
 import { lookupDomain } from "@/lib/services/whois";
 import { daysUntilExpiry, getExpiryStatus } from "@/lib/utils";
 import { processNotifications } from "@/lib/services/notification";
+import { requireAuth } from "@/lib/auth-helpers";
 
 export async function POST(request: Request) {
   // Verify CRON_SECRET for external callers
   const secret = request.headers.get("x-cron-secret");
   const isInternal = request.headers.get("x-internal") === "true";
+  const isCron =
+    isInternal ||
+    (process.env.CRON_SECRET && secret === process.env.CRON_SECRET);
 
-  if (
-    !isInternal &&
-    secret !== process.env.CRON_SECRET &&
-    process.env.CRON_SECRET
-  ) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isCron) {
+    // For non-cron calls, require authentication
+    try {
+      await requireAuth();
+    } catch (err) {
+      if (err instanceof Response) return err;
+      throw err;
+    }
   }
 
   const allDomains = db

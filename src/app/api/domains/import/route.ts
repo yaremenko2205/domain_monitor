@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { importDomainsFromJson, type DomainExportEntry } from "@/lib/config";
-import { requireUserId } from "@/lib/auth-helpers";
+import { requireAuth } from "@/lib/auth-helpers";
 
 export async function POST(request: Request) {
   try {
-    const userId = await requireUserId();
+    const { id: userId, role } = await requireAuth();
+
+    if (role === "viewer") {
+      return NextResponse.json(
+        { error: "Forbidden: viewers cannot import domains" },
+        { status: 403 }
+      );
+    }
+
     const body = (await request.json()) as {
       domains?: DomainExportEntry[];
     };

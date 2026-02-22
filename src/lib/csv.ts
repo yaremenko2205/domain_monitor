@@ -1,19 +1,39 @@
 export function domainsToCsv(
-  entries: Array<{ domain: string; notes?: string | null; enabled: boolean }>
+  entries: Array<{
+    domain: string;
+    notes?: string | null;
+    enabled: boolean;
+    ownerAccount?: string | null;
+    paymentMethod?: string | null;
+    paymentMethodExpiry?: string | null;
+    passboltUrl?: string | null;
+  }>
 ): string {
-  const header = "domain,notes,enabled";
+  const header = "domain,notes,enabled,ownerAccount,paymentMethod,paymentMethodExpiry,passboltUrl";
   const rows = entries.map((e) => {
     const domain = escapeCsvField(e.domain);
     const notes = escapeCsvField(e.notes || "");
     const enabled = e.enabled ? "true" : "false";
-    return `${domain},${notes},${enabled}`;
+    const ownerAccount = escapeCsvField(e.ownerAccount || "");
+    const paymentMethod = escapeCsvField(e.paymentMethod || "");
+    const paymentMethodExpiry = escapeCsvField(e.paymentMethodExpiry || "");
+    const passboltUrl = escapeCsvField(e.passboltUrl || "");
+    return `${domain},${notes},${enabled},${ownerAccount},${paymentMethod},${paymentMethodExpiry},${passboltUrl}`;
   });
   return [header, ...rows].join("\n");
 }
 
 export function parseCsvDomains(
   csvText: string
-): Array<{ domain: string; notes?: string; enabled?: boolean }> {
+): Array<{
+  domain: string;
+  notes?: string;
+  enabled?: boolean;
+  ownerAccount?: string;
+  paymentMethod?: string;
+  paymentMethodExpiry?: string;
+  passboltUrl?: string;
+}> {
   const lines = csvText.split(/\r?\n/).filter((line) => line.trim() !== "");
 
   if (lines.length === 0) {
@@ -29,6 +49,10 @@ export function parseCsvDomains(
     domain: string;
     notes?: string;
     enabled?: boolean;
+    ownerAccount?: string;
+    paymentMethod?: string;
+    paymentMethodExpiry?: string;
+    passboltUrl?: string;
   }> = [];
 
   for (let i = 1; i < lines.length; i++) {
@@ -42,8 +66,12 @@ export function parseCsvDomains(
     const enabledStr = fields[2]?.trim().toLowerCase();
     const enabled =
       enabledStr === "false" || enabledStr === "0" ? false : true;
+    const ownerAccount = fields[3]?.trim() || undefined;
+    const paymentMethod = fields[4]?.trim() || undefined;
+    const paymentMethodExpiry = fields[5]?.trim() || undefined;
+    const passboltUrl = fields[6]?.trim() || undefined;
 
-    results.push({ domain, notes, enabled });
+    results.push({ domain, notes, enabled, ownerAccount, paymentMethod, paymentMethodExpiry, passboltUrl });
   }
 
   return results;

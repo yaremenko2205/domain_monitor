@@ -3,17 +3,17 @@ import { db } from "@/lib/db";
 import { domains, notificationLog } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { daysUntilExpiry } from "@/lib/utils";
-import { requireUserId, getDomainWithAccess } from "@/lib/auth-helpers";
+import { requireAuth, getDomainWithAccess } from "@/lib/auth-helpers";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    const { id: userId, role } = await requireAuth();
     const { id } = await params;
 
-    const access = getDomainWithAccess(Number(id), userId);
+    const access = getDomainWithAccess(Number(id), userId, undefined, role);
     if (!access) {
       return NextResponse.json({ error: "Domain not found" }, { status: 404 });
     }
@@ -46,10 +46,17 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    const { id: userId, role } = await requireAuth();
     const { id } = await params;
 
-    const access = getDomainWithAccess(Number(id), userId, "edit");
+    if (role === "viewer") {
+      return NextResponse.json(
+        { error: "Forbidden: viewers cannot edit domains" },
+        { status: 403 }
+      );
+    }
+
+    const access = getDomainWithAccess(Number(id), userId, "edit", role);
     if (!access) {
       return NextResponse.json(
         { error: "Permission denied" },
@@ -60,6 +67,10 @@ export async function PATCH(
     const body = (await request.json()) as {
       notes?: string;
       enabled?: boolean;
+      ownerAccount?: string;
+      paymentMethod?: string;
+      paymentMethodExpiry?: string;
+      passboltUrl?: string;
     };
 
     const updates: Record<string, unknown> = {
@@ -67,6 +78,10 @@ export async function PATCH(
     };
     if (body.notes !== undefined) updates.notes = body.notes;
     if (body.enabled !== undefined) updates.enabled = body.enabled;
+    if (body.ownerAccount !== undefined) updates.ownerAccount = body.ownerAccount;
+    if (body.paymentMethod !== undefined) updates.paymentMethod = body.paymentMethod;
+    if (body.paymentMethodExpiry !== undefined) updates.paymentMethodExpiry = body.paymentMethodExpiry;
+    if (body.passboltUrl !== undefined) updates.passboltUrl = body.passboltUrl;
 
     db.update(domains)
       .set(updates)
@@ -91,10 +106,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    const { id: userId, role } = await requireAuth();
     const { id } = await params;
 
-    const access = getDomainWithAccess(Number(id), userId, "full_control");
+    if (role === "viewer") {
+      return NextResponse.json(
+        { error: "Forbidden: viewers cannot delete domains" },
+        { status: 403 }
+      );
+    }
+
+    const access = getDomainWithAccess(Number(id), userId, "full_control", role);
     if (!access) {
       return NextResponse.json(
         { error: "Permission denied" },

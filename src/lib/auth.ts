@@ -1,5 +1,4 @@
 import NextAuth from "next-auth";
-import GitHub from "next-auth/providers/github";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/lib/db";
@@ -14,14 +13,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     verificationTokensTable: schema.verificationTokens,
   }),
   providers: [
-    GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    }),
     MicrosoftEntraID({
       clientId: process.env.AZURE_AD_CLIENT_ID!,
       clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
       issuer: `https://login.microsoftonline.com/${process.env.AZURE_AD_TENANT_ID || "common"}/v2.0`,
+      authorization: {
+        params: {
+          scope: "openid profile email User.Read",
+        },
+      },
     }),
   ],
   pages: {
@@ -34,12 +34,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
+        // Read role from database
+        const dbUser = db
+          .select()
+          .from(schema.users)
+          .where(eq(schema.users.id, user.id))
+          .get();
+        session.user.role = (dbUser?.role as "admin" | "user" | "viewer") || "user";
       }
       return session;
     },
   },
   events: {
-    async signIn({ user }) {
+    async signIn({ user, account, profile }) {
       // Transfer legacy domains to the first admin user
       const legacyEmail = process.env.LEGACY_ADMIN_EMAIL;
       if (legacyEmail && user.email === legacyEmail && user.id) {
@@ -63,6 +70,57 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.log(
             `[Auth] Transferred ${legacyDomains.length} legacy domains to ${user.email}`
           );
+        }
+      }
+
+      if (user.id) {
+        // Check if this is the first user ever — make them admin
+        const allUsers = db.select().from(schema.users).all();
+        if (allUsers.length <= 1) {
+          db.update(schema.users)
+            .set({ role: "admin" })
+            .where(eq(schema.users.id, user.id))
+            .run();
+          console.log(
+            `[Auth] First user ${user.email} promoted to admin`
+          );
+          return;
+        }
+
+        // For Entra ID users, resolve role from group claims
+        if (account?.provider === "microsoft-entra-id" && profile) {
+          const groups = (profile as Record<string, unknown>).groups;
+          if (Array.isArray(groups)) {
+            const { resolveRoleFromGroups, getSystemSetting } = await import(
+              "@/lib/roles"
+            );
+            const resolvedRole = resolveRoleFromGroups(groups as string[]);
+            if (resolvedRole) {
+              db.update(schema.users)
+                .set({ role: resolvedRole })
+                .where(eq(schema.users.id, user.id))
+                .run();
+              console.log(
+                `[Auth] Role for ${user.email} resolved from group claims: ${resolvedRole}`
+              );
+            } else {
+              // Apply default role if configured and user doesn't already have admin
+              const currentUser = db
+                .select()
+                .from(schema.users)
+                .where(eq(schema.users.id, user.id))
+                .get();
+              if (currentUser?.role !== "admin") {
+                const defaultRole = getSystemSetting("default_role") as "admin" | "user" | "viewer" | null;
+                if (defaultRole) {
+                  db.update(schema.users)
+                    .set({ role: defaultRole })
+                    .where(eq(schema.users.id, user.id))
+                    .run();
+                }
+              }
+            }
+          }
         }
       }
     },
