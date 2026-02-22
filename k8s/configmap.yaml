@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: domain-monitor-config
+  namespace: domain-monitor
+  labels:
+    app.kubernetes.io/name: domain-monitor
+data:
+  # Public URL where the app is accessible (used by the scheduler for internal API calls)
+  NEXT_PUBLIC_BASE_URL: "https://domains.example.com"
+  # Cron schedule for automated domain checks (default: daily at 8 AM UTC)
+  CHECK_SCHEDULE: "0 8 * * *"
+  # Node environment
+  NODE_ENV: "production"
+  # Required when running behind a reverse proxy or ingress
+  AUTH_TRUST_HOST: "true"

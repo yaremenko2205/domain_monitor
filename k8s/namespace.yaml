@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: domain-monitor
+  labels:
+    app.kubernetes.io/name: domain-monitor
+    app.kubernetes.io/part-of: domain-monitor

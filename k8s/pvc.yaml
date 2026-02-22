@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: domain-monitor-data
+  namespace: domain-monitor
+  labels:
+    app.kubernetes.io/name: domain-monitor
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  # Uncomment and set if you need a specific StorageClass:
+  # storageClassName: standard
