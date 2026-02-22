@@ -2,17 +2,17 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { domainShares, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { requireUserId, getDomainWithAccess } from "@/lib/auth-helpers";
+import { requireAuth, getDomainWithAccess } from "@/lib/auth-helpers";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    const { id: userId, role } = await requireAuth();
     const { id } = await params;
 
-    const access = getDomainWithAccess(Number(id), userId);
+    const access = getDomainWithAccess(Number(id), userId, undefined, role);
     if (!access) {
       return NextResponse.json({ error: "Domain not found" }, { status: 404 });
     }
@@ -48,11 +48,18 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    const { id: userId, role } = await requireAuth();
     const { id } = await params;
 
+    if (role === "viewer") {
+      return NextResponse.json(
+        { error: "Forbidden: viewers cannot share domains" },
+        { status: 403 }
+      );
+    }
+
     // Only owner or full_control can share
-    const access = getDomainWithAccess(Number(id), userId, "full_control");
+    const access = getDomainWithAccess(Number(id), userId, "full_control", role);
     if (!access) {
       return NextResponse.json(
         { error: "Permission denied" },
@@ -134,10 +141,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    const { id: userId, role } = await requireAuth();
     const { id } = await params;
 
-    const access = getDomainWithAccess(Number(id), userId, "full_control");
+    if (role === "viewer") {
+      return NextResponse.json(
+        { error: "Forbidden: viewers cannot manage shares" },
+        { status: 403 }
+      );
+    }
+
+    const access = getDomainWithAccess(Number(id), userId, "full_control", role);
     if (!access) {
       return NextResponse.json(
         { error: "Permission denied" },

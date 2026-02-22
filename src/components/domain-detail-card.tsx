@@ -3,9 +3,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, DaysLeftBadge } from "@/components/status-badge";
 import { formatDate } from "@/lib/utils";
-import type { DomainWithExpiry } from "@/types";
+import type { DomainWithExpiry, UserRole } from "@/types";
 
-export function DomainDetailCard({ domain }: { domain: DomainWithExpiry & { whoisRaw?: string } }) {
+interface DomainDetailCardProps {
+  domain: DomainWithExpiry & { whoisRaw?: string };
+  role?: UserRole;
+}
+
+export function DomainDetailCard({ domain, role }: DomainDetailCardProps) {
   let whoisData: Record<string, unknown> = {};
   if (domain.whoisRaw) {
     try {
@@ -24,6 +29,8 @@ export function DomainDetailCard({ domain }: { domain: DomainWithExpiry & { whoi
       break;
     }
   }
+
+  const showPaymentInfo = role !== "viewer";
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -53,6 +60,26 @@ export function DomainDetailCard({ domain }: { domain: DomainWithExpiry & { whoi
         <CardContent className="space-y-3">
           <InfoRow label="Monitoring" value={domain.enabled ? "Enabled" : "Disabled"} />
           <InfoRow label="Notes" value={domain.notes || "—"} />
+          {showPaymentInfo && (
+            <>
+              <InfoRow
+                label="Owner Account"
+                value={domain.ownerAccount || "—"}
+              />
+              <InfoRow
+                label="Payment Method"
+                value={
+                  domain.paymentMethod
+                    ? `****${domain.paymentMethod}`
+                    : "—"
+                }
+              />
+              <InfoRow
+                label="Card Expiry"
+                value={domain.paymentMethodExpiry || "—"}
+              />
+            </>
+          )}
           {nameServers.length > 0 && (
             <div>
               <span className="text-sm font-medium text-muted-foreground">Name Servers</span>

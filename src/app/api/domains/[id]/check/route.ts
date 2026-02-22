@@ -4,17 +4,17 @@ import { domains } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { lookupDomain } from "@/lib/services/whois";
 import { daysUntilExpiry, getExpiryStatus } from "@/lib/utils";
-import { requireUserId, getDomainWithAccess } from "@/lib/auth-helpers";
+import { requireAuth, getDomainWithAccess } from "@/lib/auth-helpers";
 
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    const { id: userId, role } = await requireAuth();
     const { id } = await params;
 
-    const access = getDomainWithAccess(Number(id), userId);
+    const access = getDomainWithAccess(Number(id), userId, undefined, role);
     if (!access) {
       return NextResponse.json(
         { error: "Domain not found" },

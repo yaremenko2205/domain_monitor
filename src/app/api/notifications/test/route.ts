@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { sendTestEmail } from "@/lib/services/email";
 import { sendTestTelegram } from "@/lib/services/telegram";
-import { requireUserId } from "@/lib/auth-helpers";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function POST(request: Request) {
   try {
-    const userId = await requireUserId();
+    const { id: userId } = await requireAdmin();
     const body = (await request.json()) as { channel: "email" | "telegram" };
 
     if (body.channel === "email") {

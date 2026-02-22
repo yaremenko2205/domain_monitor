@@ -23,6 +23,9 @@ export function AddDomainDialog({
   const [open, setOpen] = useState(false);
   const [domain, setDomain] = useState("");
   const [notes, setNotes] = useState("");
+  const [ownerAccount, setOwnerAccount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethodExpiry, setPaymentMethodExpiry] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -34,7 +37,13 @@ export function AddDomainDialog({
       const res = await fetch("/api/domains", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: domain.trim(), notes: notes.trim() || undefined }),
+        body: JSON.stringify({
+          domain: domain.trim(),
+          notes: notes.trim() || undefined,
+          ownerAccount: ownerAccount.trim() || undefined,
+          paymentMethod: paymentMethod.trim() || undefined,
+          paymentMethodExpiry: paymentMethodExpiry.trim() || undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -46,6 +55,9 @@ export function AddDomainDialog({
       toast.success(`Added ${domain.trim()}`);
       setDomain("");
       setNotes("");
+      setOwnerAccount("");
+      setPaymentMethod("");
+      setPaymentMethodExpiry("");
       setOpen(false);
       onAdded();
     } catch {
@@ -87,6 +99,43 @@ export function AddDomainDialog({
               onChange={(e) => setNotes(e.target.value)}
               disabled={loading}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ownerAccount">Owner Account (optional)</Label>
+            <Input
+              id="ownerAccount"
+              placeholder="Company name"
+              value={ownerAccount}
+              onChange={(e) => setOwnerAccount(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="paymentMethod">CC Last 4 (optional)</Label>
+              <Input
+                id="paymentMethod"
+                placeholder="1234"
+                value={paymentMethod}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                  setPaymentMethod(val);
+                }}
+                maxLength={4}
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentExpiry">Card Expiry (optional)</Label>
+              <Input
+                id="paymentExpiry"
+                placeholder="MM/YY"
+                value={paymentMethodExpiry}
+                onChange={(e) => setPaymentMethodExpiry(e.target.value)}
+                maxLength={5}
+                disabled={loading}
+              />
+            </div>
           </div>
           <Button type="submit" disabled={loading || !domain.trim()} className="w-full">
             {loading ? (
