@@ -127,7 +127,7 @@ export function DomainDashboard() {
           {!isViewer && <AddDomainDialog onAdded={fetchDomains} />}
           <CheckAllButton onDone={fetchDomains} />
         </div>
-        {!isViewer && <ImportExportButtons onImported={fetchDomains} />}
+        {!isViewer && <ImportExportButtons onImported={fetchDomains} existingDomains={domains} />}
       </div>
 
       {loading ? (
