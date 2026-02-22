@@ -56,7 +56,7 @@ This guide covers deploying Domain Monitor using Docker Compose (quick start) or
    DOMAIN=domains.example.com
    ```
 
-   When set to a real domain, Caddy will automatically provision a TLS certificate via Let's Encrypt.
+   When set to a real domain, Caddy will automatically provision a TLS certificate via Let's Encrypt. For localhost, Caddy uses a self-signed certificate. HTTPS is the default for all deployments.
 
 4. **Start the services:**
 
@@ -184,7 +184,7 @@ kubectl apply -f k8s/
 | `AZURE_AD_CLIENT_SECRET` | Yes | — | Microsoft Entra ID client secret value |
 | `AZURE_AD_TENANT_ID` | No | `common` | Tenant ID, or `common` / `organizations` / `consumers` |
 | `CRON_SECRET` | Recommended | — | Protects the `/api/cron` endpoint from unauthorized access |
-| `NEXT_PUBLIC_BASE_URL` | Yes | `http://localhost:3000` | Public URL; used by the scheduler for internal API calls |
+| `NEXT_PUBLIC_BASE_URL` | Yes | `https://localhost` | Public URL; used by the scheduler for internal API calls |
 | `CHECK_SCHEDULE` | No | `0 8 * * *` | Cron expression for automated domain checks (UTC) |
 | `NODE_ENV` | No | `production` | Set to `production` for deployments |
 | `LEGACY_ADMIN_EMAIL` | No | — | Email address to claim pre-existing domains on first login |

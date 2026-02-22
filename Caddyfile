@@ -1,3 +1,6 @@
 {$DOMAIN:localhost} {
 	reverse_proxy app:3000
 }
+
+# HTTP to HTTPS redirect is automatic when using a real domain.
+# For localhost, Caddy uses a self-signed certificate.
