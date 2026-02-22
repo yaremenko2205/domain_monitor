@@ -64,6 +64,7 @@ export function DataTable<TData, TValue>({
   ]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(25);
 
   const table = useReactTable({
@@ -76,11 +77,19 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({ pageIndex, pageSize })
+          : updater;
+      setPageIndex(next.pageIndex);
+      setPageSize(next.pageSize);
+    },
     state: {
       sorting,
       columnFilters,
       columnVisibility,
-      pagination: { pageIndex: 0, pageSize },
+      pagination: { pageIndex, pageSize },
     },
   });
 
@@ -90,7 +99,7 @@ export function DataTable<TData, TValue>({
     } else {
       setPageSize(Number(value));
     }
-    table.setPageIndex(0);
+    setPageIndex(0);
   };
 
   return (
