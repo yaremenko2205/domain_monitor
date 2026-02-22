@@ -26,6 +26,7 @@ export function AddDomainDialog({
   const [ownerAccount, setOwnerAccount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [paymentMethodExpiry, setPaymentMethodExpiry] = useState("");
+  const [passboltUrl, setPassboltUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -43,6 +44,7 @@ export function AddDomainDialog({
           ownerAccount: ownerAccount.trim() || undefined,
           paymentMethod: paymentMethod.trim() || undefined,
           paymentMethodExpiry: paymentMethodExpiry.trim() || undefined,
+          passboltUrl: passboltUrl.trim() || undefined,
         }),
       });
 
@@ -58,6 +60,7 @@ export function AddDomainDialog({
       setOwnerAccount("");
       setPaymentMethod("");
       setPaymentMethodExpiry("");
+      setPassboltUrl("");
       setOpen(false);
       onAdded();
     } catch {
@@ -136,6 +139,17 @@ export function AddDomainDialog({
                 disabled={loading}
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="passboltUrl">Passbolt URL (optional)</Label>
+            <Input
+              id="passboltUrl"
+              type="url"
+              placeholder="https://passbolt.example.com/..."
+              value={passboltUrl}
+              onChange={(e) => setPassboltUrl(e.target.value)}
+              disabled={loading}
+            />
           </div>
           <Button type="submit" disabled={loading || !domain.trim()} className="w-full">
             {loading ? (

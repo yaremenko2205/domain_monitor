@@ -85,6 +85,7 @@ export const domains = sqliteTable("domains", {
   ownerAccount: text("owner_account"),
   paymentMethod: text("payment_method"),
   paymentMethodExpiry: text("payment_method_expiry"),
+  passboltUrl: text("passbolt_url"),
   enabled: integer("enabled", { mode: "boolean" }).default(true).notNull(),
   createdAt: text("created_at")
     .notNull()

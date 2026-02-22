@@ -78,6 +78,20 @@ export function DomainDetailCard({ domain, role }: DomainDetailCardProps) {
                 label="Card Expiry"
                 value={domain.paymentMethodExpiry || "—"}
               />
+              <InfoRow label="Passbolt">
+                {domain.passboltUrl ? (
+                  <a
+                    href={domain.passboltUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    Open in Passbolt
+                  </a>
+                ) : (
+                  <span className="text-sm font-medium">—</span>
+                )}
+              </InfoRow>
             </>
           )}
           {nameServers.length > 0 && (

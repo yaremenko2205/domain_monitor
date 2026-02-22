@@ -66,6 +66,7 @@ export interface DomainExportEntry {
   ownerAccount?: string;
   paymentMethod?: string;
   paymentMethodExpiry?: string;
+  passboltUrl?: string;
 }
 
 export interface DomainExportFile {
@@ -88,6 +89,7 @@ export function exportDomainsToJson(userId: string, exportAll?: boolean): Domain
       ownerAccount: d.ownerAccount || undefined,
       paymentMethod: d.paymentMethod || undefined,
       paymentMethodExpiry: d.paymentMethodExpiry || undefined,
+      passboltUrl: d.passboltUrl || undefined,
     })),
   };
 }
@@ -126,6 +128,7 @@ export function importDomainsFromJson(
         ownerAccount: entry.ownerAccount || null,
         paymentMethod: entry.paymentMethod || null,
         paymentMethodExpiry: entry.paymentMethodExpiry || null,
+        passboltUrl: entry.passboltUrl || null,
         status: "unknown",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

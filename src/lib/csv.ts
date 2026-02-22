@@ -6,9 +6,10 @@ export function domainsToCsv(
     ownerAccount?: string | null;
     paymentMethod?: string | null;
     paymentMethodExpiry?: string | null;
+    passboltUrl?: string | null;
   }>
 ): string {
-  const header = "domain,notes,enabled,ownerAccount,paymentMethod,paymentMethodExpiry";
+  const header = "domain,notes,enabled,ownerAccount,paymentMethod,paymentMethodExpiry,passboltUrl";
   const rows = entries.map((e) => {
     const domain = escapeCsvField(e.domain);
     const notes = escapeCsvField(e.notes || "");
@@ -16,7 +17,8 @@ export function domainsToCsv(
     const ownerAccount = escapeCsvField(e.ownerAccount || "");
     const paymentMethod = escapeCsvField(e.paymentMethod || "");
     const paymentMethodExpiry = escapeCsvField(e.paymentMethodExpiry || "");
-    return `${domain},${notes},${enabled},${ownerAccount},${paymentMethod},${paymentMethodExpiry}`;
+    const passboltUrl = escapeCsvField(e.passboltUrl || "");
+    return `${domain},${notes},${enabled},${ownerAccount},${paymentMethod},${paymentMethodExpiry},${passboltUrl}`;
   });
   return [header, ...rows].join("\n");
 }
@@ -30,6 +32,7 @@ export function parseCsvDomains(
   ownerAccount?: string;
   paymentMethod?: string;
   paymentMethodExpiry?: string;
+  passboltUrl?: string;
 }> {
   const lines = csvText.split(/\r?\n/).filter((line) => line.trim() !== "");
 
@@ -49,6 +52,7 @@ export function parseCsvDomains(
     ownerAccount?: string;
     paymentMethod?: string;
     paymentMethodExpiry?: string;
+    passboltUrl?: string;
   }> = [];
 
   for (let i = 1; i < lines.length; i++) {
@@ -65,8 +69,9 @@ export function parseCsvDomains(
     const ownerAccount = fields[3]?.trim() || undefined;
     const paymentMethod = fields[4]?.trim() || undefined;
     const paymentMethodExpiry = fields[5]?.trim() || undefined;
+    const passboltUrl = fields[6]?.trim() || undefined;
 
-    results.push({ domain, notes, enabled, ownerAccount, paymentMethod, paymentMethodExpiry });
+    results.push({ domain, notes, enabled, ownerAccount, paymentMethod, paymentMethodExpiry, passboltUrl });
   }
 
   return results;

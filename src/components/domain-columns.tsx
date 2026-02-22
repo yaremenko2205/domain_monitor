@@ -177,6 +177,25 @@ export function getDomainColumns(
             {row.original.paymentMethodExpiry || "—"}
           </span>
         ),
+      },
+      {
+        accessorKey: "passboltUrl",
+        header: "Passbolt",
+        cell: ({ row }) => {
+          const url = row.original.passboltUrl;
+          if (!url) return <span className="text-sm">—</span>;
+          return (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+            >
+              <ExternalLink className="inline h-3 w-3 mr-1" />
+              Open
+            </a>
+          );
+        },
       }
     );
   }

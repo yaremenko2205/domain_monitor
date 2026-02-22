@@ -79,7 +79,12 @@ export function SettingsForm() {
       const res = await fetch("/api/settings/roles");
       if (res.ok) {
         const data = await res.json();
-        setRoleSettings(data);
+        setRoleSettings({
+          role_mapping_admin: data.role_mapping_admin || "",
+          role_mapping_user: data.role_mapping_user || "",
+          role_mapping_viewer: data.role_mapping_viewer || "",
+          default_role: data.default_role || "user",
+        });
       }
     } catch {
       // Role settings may not exist yet

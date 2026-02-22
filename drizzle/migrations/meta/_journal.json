@@ -15,6 +15,13 @@
       "when": 1771757021400,
       "tag": "0001_daily_maggott",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1771773670841,
+      "tag": "0002_futuristic_zaladane",
+      "breakpoints": true
     }
   ]
 }

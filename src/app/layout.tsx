@@ -28,7 +28,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthSessionProvider>
             <nav className="border-b bg-background">
-              <div className="mx-auto flex h-14 max-w-5xl items-center px-4">
+              <div className="mx-auto flex h-14 w-[95%] items-center">
                 <Link
                   href="/"
                   className="flex items-center gap-2 font-semibold text-lg"
@@ -49,7 +49,7 @@ export default function RootLayout({
                 </div>
               </div>
             </nav>
-            <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+            <main className="mx-auto w-[95%] py-6">{children}</main>
             <Toaster />
           </AuthSessionProvider>
         </ThemeProvider>

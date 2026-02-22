@@ -70,6 +70,7 @@ export async function PATCH(
       ownerAccount?: string;
       paymentMethod?: string;
       paymentMethodExpiry?: string;
+      passboltUrl?: string;
     };
 
     const updates: Record<string, unknown> = {
@@ -80,6 +81,7 @@ export async function PATCH(
     if (body.ownerAccount !== undefined) updates.ownerAccount = body.ownerAccount;
     if (body.paymentMethod !== undefined) updates.paymentMethod = body.paymentMethod;
     if (body.paymentMethodExpiry !== undefined) updates.paymentMethodExpiry = body.paymentMethodExpiry;
+    if (body.passboltUrl !== undefined) updates.passboltUrl = body.passboltUrl;
 
     db.update(domains)
       .set(updates)

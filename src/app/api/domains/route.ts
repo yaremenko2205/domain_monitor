@@ -86,6 +86,7 @@ export async function POST(request: Request) {
       ownerAccount?: string;
       paymentMethod?: string;
       paymentMethodExpiry?: string;
+      passboltUrl?: string;
     };
     const domainName = body.domain?.toLowerCase().trim();
 
@@ -120,6 +121,7 @@ export async function POST(request: Request) {
         ownerAccount: body.ownerAccount || null,
         paymentMethod: body.paymentMethod || null,
         paymentMethodExpiry: body.paymentMethodExpiry || null,
+        passboltUrl: body.passboltUrl || null,
         status: "unknown",
         createdAt: now,
         updatedAt: now,

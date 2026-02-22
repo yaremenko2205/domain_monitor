@@ -44,6 +44,7 @@ export default function DomainDetailPage() {
   const [ownerAccount, setOwnerAccount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [paymentMethodExpiry, setPaymentMethodExpiry] = useState("");
+  const [passboltUrl, setPassboltUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
   const fetchDomain = useCallback(async () => {
@@ -60,6 +61,7 @@ export default function DomainDetailPage() {
       setOwnerAccount(data.ownerAccount || "");
       setPaymentMethod(data.paymentMethod || "");
       setPaymentMethodExpiry(data.paymentMethodExpiry || "");
+      setPassboltUrl(data.passboltUrl || "");
     } catch {
       toast.error("Failed to load domain");
     } finally {
@@ -83,6 +85,7 @@ export default function DomainDetailPage() {
           ownerAccount: ownerAccount || null,
           paymentMethod: paymentMethod || null,
           paymentMethodExpiry: paymentMethodExpiry || null,
+          passboltUrl: passboltUrl || null,
         }),
       });
       toast.success("Domain updated");
@@ -129,7 +132,8 @@ export default function DomainDetailPage() {
     notes !== (domain.notes || "") ||
     ownerAccount !== (domain.ownerAccount || "") ||
     paymentMethod !== (domain.paymentMethod || "") ||
-    paymentMethodExpiry !== (domain.paymentMethodExpiry || "");
+    paymentMethodExpiry !== (domain.paymentMethodExpiry || "") ||
+    passboltUrl !== (domain.passboltUrl || "");
 
   return (
     <div className="space-y-6">
@@ -239,6 +243,16 @@ export default function DomainDetailPage() {
                     disabled={!canEdit}
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Passbolt URL</Label>
+                <Input
+                  type="url"
+                  value={passboltUrl}
+                  onChange={(e) => setPassboltUrl(e.target.value)}
+                  placeholder="https://passbolt.example.com/..."
+                  disabled={!canEdit}
+                />
               </div>
             </>
           )}

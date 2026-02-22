@@ -13,6 +13,7 @@ export interface DomainWithExpiry {
   ownerAccount: string | null;
   paymentMethod: string | null;
   paymentMethodExpiry: string | null;
+  passboltUrl: string | null;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
